@@ -1,5 +1,5 @@
 
--- ROOM 13 HUB | DELTA
+-- ROOM 13 HUB | DELTA ANDROID
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -19,7 +19,7 @@ gui.Name = "Room13Hub"
 gui.ResetOnSpawn = false
 gui.Parent = game:GetService("CoreGui")
 
-local frame = Instance.new("Frame", gui)
+local frame = Instance.new("Frame",gui)
 frame.Size = UDim2.fromOffset(220,270)
 frame.Position = UDim2.new(0.5,-110,0.4,0)
 frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
@@ -64,6 +64,7 @@ status.TextSize = 12
 
 local espGui
 local highlight
+local noclipConnection
 
 local function getGirl()
     return workspace:FindFirstChild("girl")
@@ -76,21 +77,52 @@ local function getPart(girl)
         or girl:FindFirstChildWhichIsA("BasePart",true)
 end
 
+-- ESP
 espButton.MouseButton1Click:Connect(function()
     espOn = not espOn
     espButton.Text = "ESP : "..(espOn and "ON" or "OFF")
 end)
 
+-- HIGHLIGHT
 highlightButton.MouseButton1Click:Connect(function()
     highlightOn = not highlightOn
     highlightButton.Text = "HIGHLIGHT : "..(highlightOn and "ON" or "OFF")
 end)
 
+-- NOCLIP
 noclipButton.MouseButton1Click:Connect(function()
     noclipOn = not noclipOn
     noclipButton.Text = "NOCLIP : "..(noclipOn and "ON" or "OFF")
+
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+
+    if noclipOn then
+        noclipConnection = RunService.Stepped:Connect(function()
+            local char = player.Character
+            if not char then return end
+
+            for _,part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end)
+    else
+        local char = player.Character
+        if char then
+            for _,part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
 end)
 
+-- SPEED
 speedButton.MouseButton1Click:Connect(function()
     speedOn = not speedOn
     speedButton.Text = "SPEED : "..(speedOn and "ON" or "OFF")
@@ -103,35 +135,10 @@ speedButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- NOCLIP COM RESTAURAÇÃO DE COLISÃO
-RunService.Stepped:Connect(function()
-    local char = player.Character
-    if not char then return end
-
-    for _,part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if noclipOn then
-                if originalCollision[part] == nil then
-                    originalCollision[part] = part.CanCollide
-                end
-
-                if part.Name == "LeftFoot"
-                or part.Name == "RightFoot" then
-                    part.CanCollide = true
-                else
-                    part.CanCollide = false
-                end
-            elseif originalCollision[part] ~= nil then
-                part.CanCollide = originalCollision[part]
-                originalCollision[part] = nil
-            end
-        end
-    end
-end)
-
+-- RESPAWN
 player.CharacterAdded:Connect(function(char)
-    originalCollision = {}
     local humanoid = char:WaitForChild("Humanoid")
+
     if speedOn then
         humanoid.WalkSpeed = boostedSpeed
     end
